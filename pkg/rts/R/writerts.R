@@ -1,6 +1,6 @@
 # Author: Babak Naimi, naimi.b@gmail.com
-# Date :  July 2012
-# Version 1.0
+# Date :  November 2012
+# Version 1.1
 # Licence GPL v3
 
 
@@ -55,7 +55,7 @@ setMethod ('read.rts' ,signature(filename='character'),
              if (file.exists(nn)) {
                tclass <- strsplit(readLines(nn,6)[5]," = ")[[1]][2]
                tzone <- strsplit(readLines(nn,6)[6]," = ")[[1]][2]
-               dt <- read.table(nn,head=FALSE,skip=7,sep=",")
+               dt <- read.table(nn,header=FALSE,skip=7,sep=",")
                dt[,1] <- as.character(dt[,1])
                if (tclass == "POSIXct") time <- as.POSIXct(dt[,1],tz=ifelse(is.na(tzone),"",tzone))
                if (tclass == "Date") time <- as.Date(dt[,1],tz=ifelse(is.na(tzone),"",tzone))

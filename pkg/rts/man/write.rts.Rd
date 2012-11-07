@@ -41,7 +41,25 @@ This function is used for writing values to a series of files.
 \seealso{ \code{\link[rts]{read.rts}}, \code{\link[raster]{writeRaster}}}
 
 \examples{
-write.rts
+path <- system.file("external", package="rts") # location of files
+
+lst <- list.files(path=path,pattern='.asc$',full.names=TRUE)
+lst # list of raster files
+
+
+r <- stack(lst) # creating a RasterStack object
+
+d <- c("2000-02-01","2000-03-01","2000-04-01","2000-05-01") # corresponding dates to 4 rasters
+d <- as.Date(d) # or d <- as.POSIXct(d) 
+
+n <- rts(r,as.Date(d)) # creating a RasterStackTS object
+
+write.rts(n,"nf") # writing n into the working directory
+
+rt <- read.rts("nf") # reading nf from the working directory
+
+rt
+
 }
 
 \keyword{ write, write raster time series}

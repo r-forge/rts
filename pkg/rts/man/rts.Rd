@@ -45,7 +45,25 @@ Babak Naimi
 \seealso{ \code{\link[raster]{stack}, \link[raster]{brick}, \link[xts]{xts}}}
 
 \examples{
-rts
+path <- system.file("external", package="rts") # location of files
+
+lst <- list.files(path=path,pattern='.asc$',full.names=TRUE)
+lst # list of raster files
+
+
+r <- stack(lst) # creating a RasterStack object
+
+r
+
+d <- c("2000-02-01","2000-03-01","2000-04-01","2000-05-01") # corresponding dates to 4 rasters
+d <- as.Date(d) # or d <- as.POSIXct(d) 
+
+rt <- rts(r,d) # creating a RasterStackTS object
+
+rt
+
+plot(rt)
+
 }
 
 \keyword{ raster, time series }
