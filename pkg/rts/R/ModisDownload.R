@@ -16,6 +16,7 @@
 
 
 modisProducts <- function() {
+  .ModisLPxxx <- NULL
   load(system.file("external/ModisLP.RData", package="rts"))
   return(.ModisLPxxx)
   rm(.ModisLPxxx)
@@ -45,7 +46,7 @@ modisProducts <- function() {
     if (!RCurl::url.exists(xx)) {
       if (!RCurl::url.exists(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep=""))) stop("the http address does not exist! Version may be incorrect OR Server is down!")
       else {
-        items <- try(strsplit(getURL(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep="")), "\r*\n")[[1]],silent=TRUE)
+        items <- try(strsplit(RCurl::getURL(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep="")), "\r*\n")[[1]],silent=TRUE)
         dirs <- unlist(lapply(strsplit(unlist(lapply(strsplit(items[-c(1:19)],'href'),function(x){strsplit(x[2],'/')[[1]][1]})),'"'),function(x) {x[2]}))
         dirs <- na.omit(dirs)
         w <- which(unlist(lapply(strsplit(dirs,'\\.'),function(x) x[[1]])) == x)

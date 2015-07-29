@@ -3,4 +3,5 @@ importFrom("xts", endpoints,period.apply,apply.daily,apply.weekly,apply.monthly,
 importFrom("zoo", index,as.yearqtr,as.yearmon)
 importFrom("raster",extract,subset,cellFromRowCol,cellFromXY,filename,trim,nlayers,ncell,xres,yres,projection,minValue,maxValue,getZ,writeRaster,brick,addLayer,calc,hasValues,rasterFromCells,xyFromCell,setValues)
 exportClasses(rts, RasterBrickTS, RasterStackTS, RasterStackBrickTS)
+S3method(index, RasterStackBrickTS)
 exportPattern("^[[:alpha:]]+")

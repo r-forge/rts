@@ -17,7 +17,7 @@
 \title{Download, reproject, and mosaic Modis satellite images}
 
 \description{
-‘ModisDownload’ downloads a series of MODIS images in a specific date or a period of times, and for specified tile(s). It can also use MODIS Reproject Tool (MRT) software to mosaic the downloaded images, in case of selecting more than one tile, and reproject them to a specified coordinate system. As the format of the source images in LP DAAC is HDF, this tool can also convert them into other formats (i.e. Geotif, hdr).
+'ModisDownload' downloads a series of MODIS images in a specific date or a period of times, and for specified tile(s). It can also use MODIS Reproject Tool (MRT) software to mosaic the downloaded images, in case of selecting more than one tile, and reproject them to a specified coordinate system. As the format of the source images in LP DAAC is HDF, this tool can also convert them into other formats (i.e. Geotif, hdr).
 }
 
 \usage{
@@ -39,14 +39,14 @@ modisProducts()
   \item{dates}{ logical. Only relevant if more than one tile is selected}
   \item{hdfName}{the name of hdf file}
   \item{hdfNames}{the names of hdf files}
-  \item{MRTpath}{Path to the bin folder into the installed directory of MRT software. It is needed only if you need to mosaic and/or reproject the images. Esample: MRTpath="d:/MRT/bin"}
+  \item{MRTpath}{Path to the bin folder into the installed directory of MRT software. It is needed only if you need to mosaic and/or reproject the images. Example: MRTpath="d:/MRT/bin"}
   \item{filename}{ the name of new file}
-  \item{version}{ the product version. The defualt value is '005'}
+  \item{version}{ the product version. The default value is '005'}
   \item{bands_subset}{HDF-EOS input files contain several layers of data (bands). Through this argument you ca select a subset of bands. You need to know how many bands the product has, and which bands you want to be subset. Example: Suppose your image has 6 bands and you only need the second band. The parameter should be entered as: bands_subset="0 1 0 0 0 0".}
-  \item{delete}{ Logical. If \code{TRUE}, the original HDF files will be deleted after mosic or reproject into new files.}
+  \item{delete}{ Logical. If \code{TRUE}, the original HDF files will be deleted after mosaic or reproject into new files.}
   \item{...}{ additional arguments including:
   
-  - \code{mosaic}: logical, if \code{TRUE}, the images (several tiles) are mosaiced into a single image
+  - \code{mosaic}: logical, if \code{TRUE}, the images (several tiles) are mosaic into a single image
   
   - \code{proj}: Logical. If \code{TRUE}, it means that you want to reproject the images. Then reprojectHDF function will be called to reproject the images. 
   
@@ -69,7 +69,7 @@ modisProducts()
   }
 }
 \details{
-To have the functionality for mosaicing and reprojecting of the images, you need to first install MRT software on your machine, and introduce its' path through the MRTpath argument. Otherwise, it can only be used for automating the downloading procedure.
+To have the functionality for Mosaic and reprojecting of the images, you need to first install MRT software on your machine, and introduce its' path through the MRTpath argument. Otherwise, it can only be used for automating the downloading procedure.
 
 The functions \code{ModisDownload} uses the functions including  \code{getMODIS}, \code{mosaicHDF}  (if needed), and \code{reprojectHDF}  (if needed). The functions \code{getMODIS}, can be used to download HDF files, while  \code{mosaicHDF} and \code{reprojectHDF} can mosaic and reproject the HDF files, respectively.
 
