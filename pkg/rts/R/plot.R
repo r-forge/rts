@@ -1,6 +1,6 @@
 # Author: Babak Naimi, naimi.b@gmail.com
-# Date :  Nov. 2012
-# Version 1.0
+# Date :  July. 2015
+# Version 1.1
 # Licence GPL v3
 
 
@@ -25,7 +25,7 @@ setMethod("plot", signature(x='rts'),
             } else if (length(col) != length(y)) col <- rep(col[1],length(y))
             if (missing(ylim)) ylim <- c(min(x[,y],na.rm=TRUE),max(x[,y],na.rm=TRUE))
             
-            ep <- axTicksByTime(x, "auto", format = TRUE)
+            ep <- axTicksByTime(x, "auto", format.labels = TRUE)
             xycoords <- xy.coords(index(x), x[, y[1]])
             plot(xycoords$x, xycoords$y, type = 'l', axes = FALSE, ann = FALSE, col=col[1], ylim=ylim, ...)
             abline(v = xycoords$x[ep], col = "grey", lty = 4)

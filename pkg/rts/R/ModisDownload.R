@@ -26,6 +26,7 @@ modisProducts <- function() {
 
 .modisHTTP <- function(x,v='005') {
   if (!require(RCurl)) stop("Package RCurl is not installed")
+  requireNamespace('RCurl')
   mp <- modisProducts()
   if (is.numeric(x)) {
     if (x > nrow(mp)) stop("The product code is out of subscription!")
