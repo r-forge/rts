@@ -25,7 +25,7 @@ modisProducts <- function() {
 #-----------------------
 
 .modisHTTP <- function(x,v='005') {
-  if (!require(RCurl)) stop("Package RCurl is not installed")
+  if (!requireNamespace("RCurl",quietly = TRUE)) stop("Package RCurl is not installed")
   mp <- modisProducts()
   if (is.numeric(x)) {
     if (x > nrow(mp)) stop("The product code is out of subscription!")
@@ -35,7 +35,7 @@ modisProducts <- function() {
   if ('e4ftl01.cr.usgs.gov' %in% strsplit(x,'/')[[1]]) {
     if (strsplit(x,'/')[[1]][1] != 'http:') x <- paste('http://',x,sep='')
     if (strsplit(x,'')[[1]][length(strsplit(x,'')[[1]])] != "/") x <- paste(x,"/",sep="")
-    if (!url.exists(x)) stop("the http address does not exist OR Server is down!")
+    if (!RCurl::url.exists(x)) stop("the http address does not exist OR Server is down!")
   } else {
     w <- which(mp[,1] == x)
     if (length(w) != 1) stop("The Name does not exist in MODIS Land produnct list!")
@@ -43,10 +43,10 @@ modisProducts <- function() {
     else if (as.character(mp[w,2]) == "Aqua") ad <- "MOLA"
     else ad <- "MOTA"
     xx <- paste("http://e4ftl01.cr.usgs.gov/",ad,"/",x,".",v,"/",sep="")
-    if (!url.exists(xx)) {
-      if (!url.exists(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep=""))) stop("the http address does not exist! Version may be incorrect OR Server is down!")
+    if (!RCurl::url.exists(xx)) {
+      if (!RCurl::url.exists(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep=""))) stop("the http address does not exist! Version may be incorrect OR Server is down!")
       else {
-        items <- try(strsplit(getURL(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep="")), "\r*\n")[[1]],silent=TRUE)
+        items <- try(strsplit(RCurl::getURL(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep="")), "\r*\n")[[1]],silent=TRUE)
         dirs <- unlist(lapply(strsplit(unlist(lapply(strsplit(items[-c(1:19)],'href'),function(x){strsplit(x[2],'/')[[1]][1]})),'"'),function(x) {x[2]}))
         dirs <- na.omit(dirs)
         w <- which(unlist(lapply(strsplit(dirs,'\\.'),function(x) x[[1]])) == x)
@@ -60,6 +60,7 @@ modisProducts <- function() {
 
 #-----------------
 .getModisList <- function(x,h,v,dates) {
+  if (!requireNamespace("RCurl",quietly = TRUE)) stop("Package RCurl is not installed")
   if (inherits(dates,"character")) dates <- as.Date(dates,format='%Y.%m.%d')
   dates <- na.omit(as.Date(dates))
   if (length(dates) == 0) stop("dates is not appropriately selected!")
@@ -69,7 +70,7 @@ modisProducts <- function() {
   class(items) <- "try-error"
   ce <- 0
   while(class(items) == "try-error") { 
-    items <- try(strsplit(getURL(x), "\r*\n")[[1]],silent=TRUE)
+    items <- try(strsplit(RCurl::getURL(x), "\r*\n")[[1]],silent=TRUE)
     if (class(items) == "try-error") {
       Sys.sleep(5)
       ce <- ce + 1
@@ -98,7 +99,7 @@ modisProducts <- function() {
     class(getlist) <- "try-error"
     ce <- 0
     while(class(getlist) == "try-error") {
-      getlist <- try(strsplit(getURL(paste(x,dirs[i], "/", sep="")), "\r*\n")[[1]],silent=TRUE)
+      getlist <- try(strsplit(RCurl::getURL(paste(x,dirs[i], "/", sep="")), "\r*\n")[[1]],silent=TRUE)
       if (class(getlist) == "try-error") {
         Sys.sleep(5)
         ce <- ce + 1
@@ -129,8 +130,9 @@ modisProducts <- function() {
 #--------
 
 .downloadHTTP <- function(x,filename) {
+  if (!requireNamespace("RCurl",quietly = TRUE)) stop("Package RCurl is not installed")
   success <- FALSE
-  er <- try(writeBin(getBinaryURL(x),con=filename),silent=TRUE)
+  er <- try(writeBin(RCurl::getBinaryURL(x),con=filename),silent=TRUE)
   if (class(er) == "try-error") print("Download Error: Server does not response!!")
   else success <- TRUE
   return(success)
