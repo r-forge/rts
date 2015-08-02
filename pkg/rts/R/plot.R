@@ -4,7 +4,6 @@
 # Licence GPL v3
 
 
-
 if (!isGeneric("plot")) {
   setGeneric("plot", function(x,y,...)
     standardGeneric("plot"))
@@ -12,7 +11,7 @@ if (!isGeneric("plot")) {
 
 
 
-setMethod("plot", signature(x='rts'),
+setMethod("plot", signature(x='rts',y='ANY'),
           function(x,y,col,main,ylim,...) {
             # part of this function is copied from plot.xts in xts package
             if(nrow(x) < 2) stop("Number of observations should be greater than 1")
@@ -40,10 +39,10 @@ setMethod("plot", signature(x='rts'),
 )
 
 
-setMethod("plot", signature(x='RasterStackBrickTS'),
+setMethod("plot", signature(x='RasterStackBrickTS','ANY'),
           function(x, y,...) {
             if (missing(y)) y <- as.vector(x@time)
-            if (!inherits(try(i <- x@time[y],T), "try-error")) {
+            if (!inherits(try(i <- x@time[y],TRUE), "try-error")) {
               if (length(i) > 0) {
                 y <- as.vector(i)
               } else {
@@ -54,8 +53,7 @@ setMethod("plot", signature(x='RasterStackBrickTS'),
               warning("No raster is returned for specified time range, y is ignored!")
               y <- as.vector(x@time)
             }
-            n <- rep(NA,nlayers(x@raster))
-            n[y] <- as.character(index(x@time))[y]
-            plot(x=x@raster,y=y,main=n, ...)
+            n <- as.character(index(x@time))[y]
+            plot(x=x@raster,y=y,main=n,...)
           }
 )
