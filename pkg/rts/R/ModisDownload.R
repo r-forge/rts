@@ -178,7 +178,7 @@ modisProducts <- function() {
 #------------
 
 if (!isGeneric("setNASAauth")) {
-  setGeneric("setNASAauth", function(username,password,update)
+  setGeneric("setNASAauth", function(username,password,update,...)
     standardGeneric("setNASAauth"))
 }
 
