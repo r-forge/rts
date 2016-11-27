@@ -173,7 +173,15 @@ modisProducts <- function() {
 }
 
 #---------
-
+.setAuth <- function() {
+  if (is.null(.rtsOptions$getOption(n = 'nasaAuth'))) {
+    if (file.exists(paste0(Sys.getenv('HOME'),'/.netrc'))) {
+      if (!file.exists(paste0(Sys.getenv('HOME'),'/.urs_cookies'))) file.create(paste0(Sys.getenv('HOME'),'/.urs_cookies'))
+      .rtsOptions$addOption('nasaAuth',list(netrc.file=paste0(Sys.getenv('HOME'),'/.netrc'),
+                                            cookiefile=paste0(Sys.getenv('HOME'),'/.urs_cookies')))
+    }
+  }
+}
 
 #------------
 
