@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 5.1 (last update): Nov. 2016
+# Version: 5.2 (last update): Nov. 2016
 # Author: Babak Naimi (naimi.b@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -152,7 +152,12 @@ modisProducts <- function() {
 .getMODIS <- function(x, h, v, dates, version='005',opt) {
   xx <- .modisHTTP(x,v=version,opt=opt)
   Modislist <- .getModisList(xx,h=h,v=v,dates=dates,opt=opt)
+  
+  
   if (length(Modislist) == 0) stop("There is NO available images for the specified product!")
+  
+  cat(sum(unlist(lapply(Modislist,length))),'images are found for the specified dates!\n')
+  
   out <- data.frame(matrix(nrow=0,ncol=2))
   names(out) <- c("Date","Name")
   dirs <- names(Modislist)
@@ -164,11 +169,12 @@ modisProducts <- function() {
       n <- n[length(n)]
       if (.downloadHTTP(ModisName,n,opt=opt)) {
         out <- rbind(out,data.frame(Date=d,Name=n))
-      }
+        cat('=')
+      } else cat('0')
       cnt <- cnt + 1
     }
-    
   }
+  cat(' \n')
   out
 }
 
@@ -411,12 +417,16 @@ setMethod("getMODIS", "numeric",
               for (ModisName in Modislist[[d]]) {
                 n <- strsplit(ModisName,"/")[[1]]
                 n <- n[length(n)]
-                if (.downloadHTTP(ModisName,n,opt=opt)) dwnld[cnt] <- TRUE
+                if (.downloadHTTP(ModisName,n,opt=opt)) {
+                  dwnld[cnt] <- TRUE
+                  cat('=')
+                } else cat('0')
                 cnt <- cnt + 1
               }
               out[dc,3] <- length(which(dwnld))
               dc <- dc+1
             }
+            cat('\n')
             if (sum(out[,3]) > 0) {
               cat(paste('from ', sum(out[,2]),' available images, ',sum(out[,3]),' images are successfully downloaded.',sep=''))
             } else cat('Download is failed!')

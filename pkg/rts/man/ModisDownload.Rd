@@ -4,6 +4,7 @@
 \alias{mosaicHDF}
 \alias{reprojectHDF}
 \alias{modisProducts}
+\alias{setNASAauth}
 
 \alias{ModisDownload,character-method}
 \alias{ModisDownload,numeric-method}
@@ -13,7 +14,7 @@
 \alias{reprojectHDF,numeric-method}
 \alias{getMODIS,character-method}
 \alias{getMODIS,numeric-method}
-
+\alias{setNASAauth,ANY-method}
 \title{Download, reproject, and mosaic Modis satellite images}
 
 \description{
