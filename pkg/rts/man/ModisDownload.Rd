@@ -22,6 +22,8 @@
 }
 
 \usage{
+setNASAauth(username,password,update,...)
+
 ModisDownload(x,h,v,dates, ...)
 
 getMODIS(x,h,v,dates,version='005')
@@ -70,6 +72,9 @@ modisProducts()
   }
 }
 \details{
+To be able to download the data, you need to register on "https://urs.earthdata.nasa.gov/" and get a username and password. To pass the authentication by the website, you need to set the username and password on the machine (only first time) using \code{setNASAauth} function. Just specify the username and password in the function for the first time, and then the ModisDownload function can use it everytime you need to download the data.
+
+
 To have the functionality for Mosaic and reprojecting of the images, you need to first install MRT software on your machine, and introduce its' path through the MRTpath argument. Otherwise, it can only be used for automating the downloading procedure.
 
 The functions \code{ModisDownload} uses the functions including  \code{getMODIS}, \code{mosaicHDF}  (if needed), and \code{reprojectHDF}  (if needed). The functions \code{getMODIS}, can be used to download HDF files, while  \code{mosaicHDF} and \code{reprojectHDF} can mosaic and reproject the HDF files, respectively.
@@ -92,7 +97,9 @@ The functions \code{ModisDownload} uses the functions including  \code{getMODIS}
 
 #library(RCurl)
 
- 
+# First, you need to register on https://urs.earthdata.nasa.gov/ and get a username and password
+# for the first time, set the authentication info:
+# setNASAauth(username='myusername',password='mypass') 
 
 # product list:
 
