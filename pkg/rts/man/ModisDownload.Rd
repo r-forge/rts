@@ -5,6 +5,8 @@
 \alias{reprojectHDF}
 \alias{modisProducts}
 \alias{setNASAauth}
+\alias{getNativePixelSize}
+\alias{getNativeTemporalResolution}
 
 \alias{ModisDownload,character-method}
 \alias{ModisDownload,numeric-method}
@@ -26,13 +28,17 @@ setNASAauth(username,password,update,...)
 
 ModisDownload(x,h,v,dates, ...)
 
-getMODIS(x,h,v,dates,version='005')
+getMODIS(x,h,v,dates,version='005',forceReDownload=TRUE,ncore='auto')
 
 mosaicHDF(hdfNames,filename,MRTpath,bands_subset,delete=FALSE)
 
-reprojectHDF(hdfName,filename,MRTpath, ...)
+reprojectHDF(hdfName,filename,MRTpath,...)
 
 modisProducts()
+
+getNativePixelSize(product)
+
+getNativeTemporalResolution(product)
 }
 
 \arguments{
@@ -50,6 +56,12 @@ modisProducts()
   \item{version}{ the product version. The default value is '005'}
   \item{bands_subset}{HDF-EOS input files contain several layers of data (bands). Through this argument you ca select a subset of bands. You need to know how many bands the product has, and which bands you want to be subset. Example: Suppose your image has 6 bands and you only need the second band. The parameter should be entered as: bands_subset="0 1 0 0 0 0".}
   \item{delete}{ Logical. If \code{TRUE}, the original HDF files will be deleted after mosaic or reproject into new files.}
+  \item{forceReDownload}{logical, specify whether the product should be re-downloaded if it had been downloaded before. The downloaded products are cashed using a hash digest of the inputs. If the download is canceled mid-way and the same exact products are downloaded again, it can be useful to avoid re-downloading them.}
+  
+  \item{ncore}{numerical; specify the number of cores used to speed up the download; 'auto' can be used instead to detect the number of cores and use half of them}
+  
+  \item{product}{The product name; can be extracted from the \code{modisProduct} function}
+  
   \item{...}{ additional arguments including:
   
   - \code{mosaic}: logical, if \code{TRUE}, the images (several tiles) are mosaic into a single image
@@ -85,7 +97,7 @@ The functions \code{ModisDownload} uses the functions including  \code{getMODIS}
 }
 
 
-\author{Babak Naimi
+\author{Babak Naimi & Pablo Alfaro
 
 \email{naimi.b@gmail.com}
 
