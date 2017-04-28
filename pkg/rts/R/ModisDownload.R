@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 5.4 (last update): Jan. 2017
+# Version: 5.6 (last update): April. 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -22,7 +22,9 @@
 # is saved using as name the hash key. When another download is made you can rebuild the hash and chec if the .RCache file exists to avoid 
 # the download altogether.
 # parallel is used to call parLapplyLB to do the parallel downloads
-
+# palfaro @ 2017-01-09
+# create a RCurl handle which will be reused between connections to enable http keepalives
+.MD_curlHandle <- RCurl::getCurlHandle()
 
 modisProducts <- function() {
   .ModisLPxxx <- NULL
@@ -84,7 +86,9 @@ getNativeTemporalResolution <- function(product) {
     if (!RCurl::url.exists(xx)) {
       if (!RCurl::url.exists(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep=""))) stop("the http address does not exist! Version may be incorrect OR Server is down!")
       else {
-        items <- try(strsplit(RCurl::getURL(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep=""),.opt=opt), "\r*\n")[[1]],silent=TRUE)
+        # palfaro @ 2017-01-09
+        # I think there was a typo here. .opt instead of .opts
+        items <- try(strsplit(RCurl::getURL(paste("http://e4ftl01.cr.usgs.gov/",ad,"/",sep=""),.opts=opt), "\r*\n")[[1]],silent=TRUE)
         dirs <- unlist(lapply(strsplit(unlist(lapply(strsplit(items[-c(1:19)],'href'),function(x){strsplit(x[2],'/')[[1]][1]})),'"'),function(x) {x[2]}))
         dirs <- na.omit(dirs)
         w <- which(unlist(lapply(strsplit(dirs,'\\.'),function(x) x[[1]])) == x)
@@ -112,21 +116,27 @@ getNativeTemporalResolution <- function(product) {
   pathCache <- paste('RCache/', digest::digest(c(x, h, v, dates)), '.RData', sep='')
   if (forceReDownload | !file.exists(pathCache)) {
     # if forceReDownload or cache doesn't exist then access the MODIS url, else use the cached version
-    try.nr <- 3
+    serverErrorsPattern <- '503 Service Unavailable|500 Internal Server Error'
+    try.nr <- 5
     items <- 0
     class(items) <- "try-error"
     ce <- 0
     while(class(items) == "try-error") { 
-      items <- try(strsplit(RCurl::getURL(x,.opts = opt), "\r*\n")[[1]],silent=TRUE)
-      if (class(items) == "try-error") {
-        Sys.sleep(5)
+      # palfaro @ 2017-01-09
+      # reuse .MD_curlHandle to enable http keepalive
+      items <- try(strsplit(RCurl::getURL(x,.opts = opt, curl = .MD_curlHandle), "\r*\n")[[1]],silent=TRUE)
+      
+      if (class(items) == "try-error" || (length(items) < 30 && length(grep(pattern = serverErrorsPattern, items)) > 0)) {
+        Sys.sleep(15)
         ce <- ce + 1
         if (ce == (try.nr+1)) stop("Download error: Server does not response!")
       }
     }
     items <- items[-1]
     # get the directory names (available dates)
-    dirs <- unlist(lapply(strsplit(unlist(lapply(strsplit(items,'href'),function(x){strsplit(x[2],'/')[[1]][1]})),'"'),function(x) {x[2]}))
+    # palfaro @ 2017-01-17
+    # Add fixed = TRUE, speeds up the parsing of the file
+    dirs <- unlist(lapply(strsplit(unlist(lapply(strsplit(items,'href',fixed = TRUE),function(x){strsplit(x[2],'/',fixed = TRUE)[[1]][1]})),'"'),function(x) {x[2]}))
     dirs <- na.omit(dirs)
     d <- as.Date(dirs,format='%Y.%m.%d')
     
@@ -199,21 +209,26 @@ getNativeTemporalResolution <- function(product) {
     # I had to rename x to productURL because of the call to parLapplyLB below already has an x parameter
     #dir <- dirs[[1]]
     #productURL <- x
-    getModisName <- function(dir, productURL, h, v, opt) {
+    getModisName <- function(dir, productURL, h, v, opt, serverErrorsPattern) {
       if (!requireNamespace('RCurl')) stop("Package RCurl is not installed")
       getlist <- 0
       class(getlist) <- "try-error"
       ce <- 0
       while(class(getlist) == "try-error") {
-        getlist <- try(strsplit(RCurl::getURL(paste(productURL,dir, "/", sep=""),.opts = opt), "\r*\n")[[1]],silent=TRUE)
-        if (class(getlist) == "try-error") {
-          Sys.sleep(5)
+        # palfaro @ 2017-01-09
+        # reuse .MD_curlHandle to enable http keepalive
+        getlist <- try(strsplit(RCurl::getURL(paste(productURL,dir, "/", sep=""),.opts = opt, curl = .MD_curlHandle), "\r*\n")[[1]],silent=TRUE)
+        
+        if (class(getlist) == "try-error" || (length(getlist) < 30 && length(grep(pattern = serverErrorsPattern, getlist)) > 0)) {
+          Sys.sleep(15)
           ce <- ce + 1
-          if (ce == 4) stop("Download error: Server does not response!")
+          if (ce == 6) stop("Download error: Server does not response!")
         }
       }
       
-      getlist <- unlist(lapply(strsplit(getlist,"href"),function(x){strsplit(x[2],'"')[[1]][2]}))
+      # palfaro @ 2017-01-17
+      # Add fixed = TRUE, slightly speeds up the parsing of the file
+      getlist <- unlist(lapply(strsplit(getlist,"href", fixed = TRUE),function(x){strsplit(x[2],'"')[[1]][2]}))
       w <- which(is.na(getlist))
       if (length(w) > 0) getlist <- getlist[-w]
       w <- unlist(lapply(lapply(getlist,function(x) strsplit(x,'\\.')[[1]]),function(x) x[length(x)] == 'hdf'))
@@ -227,7 +242,9 @@ getNativeTemporalResolution <- function(product) {
             else vc <- as.character(vv)
             if (hh < 10) hc <- paste('0',as.character(hh),sep='')
             else hc <- as.character(hh)
-            ModisName <- grep(".hdf$",grep(paste('h',hc,'v',vc,sep=''),getlist,value=TRUE),value=TRUE)
+            # palfaro @ 2017-01-17
+            # Add fixed = TRUE, slightly speeds up the parsing of the file
+            ModisName <- grep(".hdf$",grep(paste('h',hc,'v',vc,sep=''),getlist,value=TRUE, fixed=TRUE),value=TRUE)
             #if (length(ModisName) == 1) {
             m <- c(m,paste(productURL,dir, "/",ModisName,sep='')[length(ModisName)])
           }
@@ -242,11 +259,17 @@ getNativeTemporalResolution <- function(product) {
     # Browse the directories using multiple concurrent connections to mitigate TCP Slow Start Problems
     nCoresAUsar <- min(length(dirs), nc)
     if (nCoresAUsar > 1) {
-      cl <- parallel::makeCluster(getOption("cl.cores", nCoresAUsar))
-      Modislist <- parallel::parLapplyLB(cl=cl, X=dirs, fun=getModisName, productURL=x, h=h, v=v, opt=opt)
+      cl <- makeCluster(getOption("cl.cores", nCoresAUsar))
+      # palfaro @ 2017-01-09
+      # The curl handles must be created in the processes that are going to use them so we create them
+      # using clusterEvalQ
+      clusterEvalQ(cl, expr = { 
+        require('RCurl')
+        .MD_curlHandle <- RCurl::getCurlHandle() })
+      Modislist <- parLapplyLB(cl=cl, X=dirs, fun=getModisName, productURL=x, h=h, v=v, opt=opt, serverErrorsPattern=serverErrorsPattern)
       stopCluster(cl)
     } else {
-      Modislist <- lapply(dirs, FUN = getModisName, productURL=x, h=h, v=v, opt=opt)
+      Modislist <- lapply(dirs, FUN = getModisName, productURL=x, h=h, v=v, opt=opt, serverErrorsPattern=serverErrorsPattern)
     }
     names(Modislist) <- dirs
     
@@ -260,6 +283,7 @@ getNativeTemporalResolution <- function(product) {
   } else {
     # if !forceReDownload and cache exists load result from file
     envir <- attach(pathCache, pos=2, name='Modislist', warn.conflict=FALSE)
+    on.exit(try(detach(pathCache), silent=TRUE))
     Modislist <- envir$Modislist
     rm(envir)
   }
@@ -270,8 +294,6 @@ getNativeTemporalResolution <- function(product) {
 .downloadHTTP <- function(x,filename,opt, forceReDownload=TRUE, 
                           maxRetries=5, secondsBetweenRetries=15) {
   if (!requireNamespace("RCurl",quietly = TRUE)) stop("Package RCurl is not installed")
-  success <- FALSE
-  
   # palfaro @ 2017-01-02
   # Sometimes the server returns a response having 299 bytes total like this:
   #<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
@@ -283,37 +305,57 @@ getNativeTemporalResolution <- function(product) {
   #request due to maintenance downtime or capacity
   #problems. Please try again later.</p>
   #  </body></html>
-  # If the file exists and has the text "503 Service Unavailable" in it, download it again
-  if (!forceReDownload &&
-      file.exists(filename) && file.info(filename)$size < 1024 &&
-      length(grep(pattern = '503 Service Unavailable', readLines(filename), fixed = TRUE)) > 0) {
-    forceReDownload <- TRUE
-  }
+  #
+  # Or a response having 537 bytes like this:
+  #<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+  #  <html><head>
+  #  <title>500 Internal Server Error</title>
+  #  </head><body>
+  #  <h1>Internal Server Error</h1>
+  #  <p>The server encountered an internal error or
+  #misconfiguration and was unable to complete
+  #your request.</p>
+  #  <p>Please contact the server administrator at 
+  #root@e4ftl01.cr.usgs.gov to inform them of the time this error occurred,
+  #and the actions you performed just before this error.</p>
+  #  <p>More information about this error may be available
+  #in the server error log.</p>
+  #  </body></html>
+  # In those cases we redownload the file
+  serverErrorsPattern <- '503 Service Unavailable|500 Internal Server Error'
   
   # palfaro @ 2017-01-02
   # Added forceReDownload parameter to avoid downloading file again if it already exists
   # the filesize check is a minimal check to see if the file has been downloaded correctly
-  if (forceReDownload | !file.exists(filename) | file.info(filename)$size == 0) {
-    # Also, adding a few retries if the file can't be downloaded
-    # there are several momentary interruptions in connections that 
-    # abort downloads but can be addressed by trying again.
-    nRetries <- 0
-    while (!success & nRetries < maxRetries) {
-      er <- try(writeBin(RCurl::getBinaryURL(x,.opts = opt),con=filename),silent=TRUE)
-      
-      # palfaro @ 2017-01-02
-      # Here if we get the service unavailable error we treat the download as an error, wait a little and try again later
-      if (file.exists(filename) && file.info(filename)$size < 1024 &&
-          length(grep(pattern = '503 Service Unavailable', readLines(filename), fixed = TRUE)) > 0) {
-        class(er) <- "try-error"
-      }
-      
-      if (class(er) == "try-error") {
-        nRetries <- nRetries + 1
-        Sys.sleep(secondsBetweenRetries)
-      } else { success <- TRUE }
+  # The download has been succesfull iff we don't have to redownload and the file exists, 
+  # and has a larger size than 1024 bytes or it's smaller but it doesn't contain serverErrorsPattern 
+  # in it's lines.
+  success <- !forceReDownload && file.exists(filename) && 
+    (file.info(filename)$size > 1024 || length(grep(pattern = serverErrorsPattern, readLines(filename))) == 0)
+  # Also, adding a few retries if the file can't be downloaded
+  # there are several momentary interruptions in connections that 
+  # abort downloads but can be addressed by trying again.
+  nRetries <- 0
+  while (!success & nRetries < maxRetries) {
+    # palfaro @ 2017-01-09
+    # Write directly to file, without going through memory, should be slightly faster.
+    # Also, reuse .MD_curlHandle to enable http keepalive
+    f = RCurl::CFILE(filename, mode="wb")
+    er2 <- try(er <- RCurl::curlPerform(url = x, curl=.MD_curlHandle, writedata = f@ref, .opts = opt))
+    RCurl::close(f)
+    
+    # palfaro @ 2017-01-02
+    # Here if we get the service unavailable error we treat the download as an error, wait a little and try again later
+    if (!file.exists(filename) || 
+        (file.info(filename)$size < 1024 && length(grep(pattern = serverErrorsPattern, readLines(filename))) > 0)) {
+      class(er2) <- "try-error"
     }
-  } else success <- TRUE  
+    
+    if (class(er2) == "try-error" || er != 0) {
+      nRetries <- nRetries + 1
+      Sys.sleep(secondsBetweenRetries)
+    } else { success <- TRUE }
+  }
   
   if (!success) print("Download Error: Server does not response!!")
   return(success)
@@ -377,9 +419,15 @@ getNativeTemporalResolution <- function(product) {
   # while using load balancing
   nCoresAUsar <- min(nrow(plainModisList), nc)
   if (nCoresAUsar > 1) {
-    cl <- parallel::makeCluster(getOption("cl.cores", nCoresAUsar))
-    parallel::clusterExport(cl=cl, varlist=c(".downloadHTTP"), envir=environment())
-    res <- parallel::parLapplyLB(cl=cl, X = 1:nrow(plainModisList), fun = getFile, plainModisList=plainModisList, opt=opt, forceReDownload=forceReDownload)
+    cl <- makeCluster(getOption("cl.cores", nCoresAUsar))
+    # palfaro @ 2017-01-09
+    # The curl handles must be created in the processes that are going to use them so we create them
+    # using clusterEvalQ
+    clusterEvalQ(cl, expr = { 
+      require('RCurl')
+      .MD_curlHandle <- RCurl::getCurlHandle() })
+    clusterExport(cl=cl, varlist=c(".downloadHTTP"), envir=environment())
+    res <- parLapplyLB(cl=cl, X = 1:nrow(plainModisList), fun = getFile, plainModisList=plainModisList, opt=opt, forceReDownload=forceReDownload)
     stopCluster(cl)
   } else {
     res <- lapply(X = 1:nrow(plainModisList), FUN = getFile, plainModisList=plainModisList, opt=opt, forceReDownload=forceReDownload)
@@ -580,11 +628,15 @@ setMethod("getMODIS", "character",
             # Max amount of parallel downloads. If package parallel is not available use only 1
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
-              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- floor(nc/2)
+              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)
               else if (is.numeric(ncore)) ncore <- min(nc,ncore)
               else ncore <- 1L
             } else { ncore <- 1L }
             
+            if (ncore > 4) {
+              ncore <- 4
+              warning('ncore is set to 4 (cannot be greater...!)')
+            }
             xx <- .modisHTTP(x,v=version,opt=opt)
             Modislist <- .getModisList(xx,h=h,v=v,dates=dates,opt=opt,forceReDownload=forceReDownload,nc=ncore)
             if (length(Modislist) == 0) stop("There is NO available images for the specified product!")
@@ -626,10 +678,15 @@ setMethod("getMODIS", "numeric",
             
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
-              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- floor(nc/2)
+              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)
               else if (is.numeric(ncore)) ncore <- min(nc,ncore)
               else ncore <- 1L
             } else { ncore <- 1L }
+            
+            if (ncore > 4) {
+              ncore <- 4
+              warning('ncore is set to 4 (cannot be greater...!)')
+            }
             
             xx <- .modisHTTP(x,v=version,opt=opt)
             Modislist <- .getModisList(xx,h=h,v=v,dates=dates,opt=opt,forceReDownload=forceReDownload,nc=ncore)
@@ -677,10 +734,15 @@ setMethod("ModisDownload", "character",
             
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
-              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- floor(nc/2)
+              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)
               else if (is.numeric(ncore)) ncore <- min(nc,ncore)
               else ncore <- 1L
             } else { ncore <- 1L }
+            
+            if (ncore > 4) {
+              ncore <- 4
+              warning('ncore is set to 4 (cannot be greater...!)')
+            }
             
             dHDF <- .getMODIS(x, h, v, dates, version,opt=opt, forceReDownload = forceReDownload,nc=ncore)
             dHDF$Date <- as.character(dHDF$Date)
@@ -751,10 +813,15 @@ setMethod("ModisDownload", "numeric",
             
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
-              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- floor(nc/2)
+              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)
               else if (is.numeric(ncore)) ncore <- min(nc,ncore)
               else ncore <- 1L
             } else { ncore <- 1L }
+            
+            if (ncore > 4) {
+              ncore <- 4
+              warning('ncore is set to 4 (cannot be greater...!)')
+            }
             
             dHDF <- .getMODIS(x,h,v,dates,version,forceReDownload=forceReDownload,nc=ncore)
             dHDF$Date <- as.character(dHDF$Date)
