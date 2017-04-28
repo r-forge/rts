@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 5.6 (last update): April. 2017
+# Version: 5.7 (last update): April. 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -24,7 +24,7 @@
 # parallel is used to call parLapplyLB to do the parallel downloads
 # palfaro @ 2017-01-09
 # create a RCurl handle which will be reused between connections to enable http keepalives
-.MD_curlHandle <- RCurl::getCurlHandle()
+
 
 modisProducts <- function() {
   .ModisLPxxx <- NULL
@@ -108,7 +108,7 @@ getNativeTemporalResolution <- function(product) {
   dates <- na.omit(as.Date(dates))
   if (length(dates) == 0) stop("dates is not appropriately selected!")
   dates <- sort(dates)
-  
+  .MD_curlHandle <- RCurl::getCurlHandle()
   # palfaro @ 2017-01-02
   # cache the results using a hash digest of the inputs. It avoids having to traverse the whole
   # file structure if you are going to download the exact same product/version/tiles/dates you did in the past
@@ -294,6 +294,7 @@ getNativeTemporalResolution <- function(product) {
 .downloadHTTP <- function(x,filename,opt, forceReDownload=TRUE, 
                           maxRetries=5, secondsBetweenRetries=15) {
   if (!requireNamespace("RCurl",quietly = TRUE)) stop("Package RCurl is not installed")
+  .MD_curlHandle <- RCurl::getCurlHandle()
   # palfaro @ 2017-01-02
   # Sometimes the server returns a response having 299 bytes total like this:
   #<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
