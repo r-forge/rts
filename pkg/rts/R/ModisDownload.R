@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 5.7 (last update): April. 2017
+# Version: 5.8 (last update): June. 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -113,7 +113,7 @@ getNativeTemporalResolution <- function(product) {
   # cache the results using a hash digest of the inputs. It avoids having to traverse the whole
   # file structure if you are going to download the exact same product/version/tiles/dates you did in the past
   # for example if a dowload cancelled midway
-  pathCache <- paste('RCache/', digest::digest(c(x, h, v, dates)), '.RData', sep='')
+  pathCache <- paste('RCache/', digest::digest(c(x, h, v, dates)), '.rds', sep='')
   if (forceReDownload | !file.exists(pathCache)) {
     # if forceReDownload or cache doesn't exist then access the MODIS url, else use the cached version
     serverErrorsPattern <- '503 Service Unavailable|500 Internal Server Error'
@@ -209,30 +209,39 @@ getNativeTemporalResolution <- function(product) {
     # I had to rename x to productURL because of the call to parLapplyLB below already has an x parameter
     #dir <- dirs[[1]]
     #productURL <- x
-    getModisName <- function(dir, productURL, h, v, opt, serverErrorsPattern) {
+    getModisName <- function(dir, productURL, h, v, opt, serverErrorsPattern,forceReDownload=TRUE) {
       if (!requireNamespace('RCurl')) stop("Package RCurl is not installed")
-      getlist <- 0
-      class(getlist) <- "try-error"
-      ce <- 0
-      while(class(getlist) == "try-error") {
-        # palfaro @ 2017-01-09
-        # reuse .MD_curlHandle to enable http keepalive
-        getlist <- try(strsplit(RCurl::getURL(paste(productURL,dir, "/", sep=""),.opts = opt, curl = .MD_curlHandle), "\r*\n")[[1]],silent=TRUE)
-        
-        if (class(getlist) == "try-error" || (length(getlist) < 30 && length(grep(pattern = serverErrorsPattern, getlist)) > 0)) {
-          Sys.sleep(15)
-          ce <- ce + 1
-          if (ce == 6) stop("Download error: Server does not response!")
-        }
-      }
       
-      # palfaro @ 2017-01-17
-      # Add fixed = TRUE, slightly speeds up the parsing of the file
-      getlist <- unlist(lapply(strsplit(getlist,"href", fixed = TRUE),function(x){strsplit(x[2],'"')[[1]][2]}))
-      w <- which(is.na(getlist))
-      if (length(w) > 0) getlist <- getlist[-w]
-      w <- unlist(lapply(lapply(getlist,function(x) strsplit(x,'\\.')[[1]]),function(x) x[length(x)] == 'hdf'))
-      if (any(w)) getlist <- getlist[w]
+      pathCache <- paste('RCache/', basename(productURL), '_', dir, '.rds', sep = '')
+      if (forceReDownload | !file.exists(pathCache)) {
+        getlist <- 0
+        class(getlist) <- "try-error"
+        ce <- 0
+        while(class(getlist) == "try-error") {
+          # palfaro @ 2017-01-09
+          # reuse MD_curlHandle to enable http keepalive
+          getlist <- try(strsplit(RCurl::getURL(paste(productURL,dir, "/", sep=""),.opts = opt, curl = MD_curlHandle), "\r*\n")[[1]],silent=TRUE)
+          
+          if (class(getlist) == "try-error" || (length(getlist) < 30 && length(grep(pattern = serverErrorsPattern, getlist)) > 0)) {
+            Sys.sleep(15)
+            ce <- ce + 1
+            if (ce == 6) stop("Download error: Server does not response!")
+          }
+        }
+        
+        # palfaro @ 2017-01-17
+        # Add fixed = TRUE, slightly speeds up the parsing of the file
+        getlist <- unlist(lapply(strsplit(getlist,"href", fixed = TRUE),function(x){strsplit(x[2],'"')[[1]][2]}))
+        w <- which(is.na(getlist))
+        if (length(w) > 0) getlist <- getlist[-w]
+        w <- unlist(lapply(lapply(getlist,function(x) strsplit(x,'\\.')[[1]]),function(x) x[length(x)] == 'hdf'))
+        if (any(w)) getlist <- getlist[w]
+        
+        dir.create(dirname(pathCache), showWarnings=FALSE, recursive = TRUE)
+        saveRDS(object = Modislist, file=pathCache)
+      } else {
+        getlist <- readRDS(file = pathCache)
+      }
       
       if (length(grep('h[0-9]',getlist)) > 0) {
         m <- c()
@@ -266,10 +275,10 @@ getNativeTemporalResolution <- function(product) {
       clusterEvalQ(cl, expr = { 
         require('RCurl')
         .MD_curlHandle <- RCurl::getCurlHandle() })
-      Modislist <- parLapplyLB(cl=cl, X=dirs, fun=getModisName, productURL=x, h=h, v=v, opt=opt, serverErrorsPattern=serverErrorsPattern)
+      Modislist <- parLapplyLB(cl=cl, X=dirs, fun=getModisName, productURL=x, h=h, v=v, opt=opt, serverErrorsPattern=serverErrorsPattern, forceReDownload=forceReDownload)
       stopCluster(cl)
     } else {
-      Modislist <- lapply(dirs, FUN = getModisName, productURL=x, h=h, v=v, opt=opt, serverErrorsPattern=serverErrorsPattern)
+      Modislist <- lapply(dirs, FUN = getModisName, productURL=x, h=h, v=v, opt=opt, serverErrorsPattern=serverErrorsPattern, forceReDownload=forceReDownload)
     }
     names(Modislist) <- dirs
     
@@ -278,14 +287,11 @@ getNativeTemporalResolution <- function(product) {
     # this is to prevent the cache from hiding updates in the server
     if (allImagesAvailable) {
       dir.create(dirname(pathCache), showWarnings=FALSE, recursive = TRUE)
-      save(Modislist, file=pathCache)
+      saveRDS(object = Modislist, file=pathCache)
     }
   } else {
     # if !forceReDownload and cache exists load result from file
-    envir <- attach(pathCache, pos=2, name='Modislist', warn.conflict=FALSE)
-    on.exit(try(detach(pathCache), silent=TRUE))
-    Modislist <- envir$Modislist
-    rm(envir)
+    Modislist <- readRDS(file = pathCache)
   }
   Modislist
 }
