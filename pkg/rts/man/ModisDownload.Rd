@@ -34,7 +34,7 @@ mosaicHDF(hdfNames,filename,MRTpath,bands_subset,delete=FALSE)
 
 reprojectHDF(hdfName,filename,MRTpath,...)
 
-modisProducts()
+modisProducts(version=NULL)
 
 getNativePixelSize(product)
 

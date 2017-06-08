@@ -1,7 +1,7 @@
 Package: rts
 Type: Package
 Title: Raster Time Series Analysis
-Version: 1.0-23
+Version: 1.0-24
 Date: 2017-06-07
 Author: Babak Naimi
 Depends: methods, sp (>= 1.0-13), raster, xts, zoo

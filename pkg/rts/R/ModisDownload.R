@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 5.8 (last update): June. 2017
+# Version: 5.9 (last update): June. 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -26,11 +26,19 @@
 # create a RCurl handle which will be reused between connections to enable http keepalives
 
 
-modisProducts <- function() {
-  .ModisLPxxx <- NULL
-  load(system.file("external/ModisLP.RData", package="rts"))
-  return(.ModisLPxxx)
-  rm(.ModisLPxxx)
+modisProducts <- function(version=NULL) {
+  #.ModisLPxxx <- NULL
+  #load(system.file("external/ModisLP.RData", package="rts"))
+  #return(.ModisLPxxx)
+  #rm(.ModisLPxxx)
+  p1 <- readRDS(system.file("external/ModisLPV5.rds", package="rts"))
+  p2 <- readRDS(system.file("external/ModisLPV6.rds", package="rts"))
+  if (is.null(version)) return(list(`Version 4-5.5`=p1,`Version 6`=p2))
+  else {
+    if (version %in% c(4,5,5.5) || version %in% c('004','005','5.5')) return(p1)
+    else if (version == 6 || version == '006') return(p2)
+    else return(list(`Version 4-5.5`=p1,`Version 6`=p2))
+  }
 }
 
 # palfaro @ 2017-01-02
@@ -38,7 +46,13 @@ modisProducts <- function() {
 # gets the native pixel size of a given product from the table
 getNativePixelSize <- function(product) {
   products <- modisProducts()
-  pixelSize <- products$resolution[which(products$product==product)]
+  w <- which(products[[1]]$product==product)
+  if (length(w) != 0) {
+    pixelSize <- products[[1]]$resolution[w]
+  } else {
+    w <- which(products[[2]]$product==product)
+    pixelSize <- products[[2]]$resolution[w]
+  }
   pixelSize <- levels(pixelSize)[pixelSize]
   pixelSize <- as.integer(gsub(pattern = '[^[:digit:]]', replacement='', x=pixelSize))
   return(pixelSize)
@@ -47,7 +61,14 @@ getNativePixelSize <- function(product) {
 # gets the native temporal resolution of a given product from the table
 getNativeTemporalResolution <- function(product) {
   products <- modisProducts()
-  temporalResolution <- products$temporal[which(products$product==product)]
+  w <- which(products[[1]]$product==product)
+  if (length(w) != 0) {
+    temporalResolution <- products[[1]]$temporal[w]
+  } else {
+    w <- which(products[[2]]$product==product)
+    temporalResolution <- products[[2]]$temporal[w]
+  }
+  
   temporalResolution <- levels(temporalResolution)[temporalResolution]
   
   increment <- gsub(pattern = '[^[:digit:]*]', replacement='', x=temporalResolution)
@@ -66,14 +87,14 @@ getNativeTemporalResolution <- function(product) {
 
 .modisHTTP <- function(x,v='005',opt) {
   if (!requireNamespace("RCurl",quietly = TRUE)) stop("Package RCurl is not installed")
-  mp <- modisProducts()
+  mp <- modisProducts(version=v)
   if (is.numeric(x)) {
     if (x > nrow(mp)) stop("The product code is out of subscription!")
     x <- as.character(mp[x,1])
   }
   x <- trim(x)
   if ('e4ftl01.cr.usgs.gov' %in% strsplit(x,'/')[[1]]) {
-    if (strsplit(x,'/')[[1]][1] != 'http:') x <- paste('http://',x,sep='')
+    if (!strsplit(x,'/')[[1]][1] %in% c('http:','https:')) x <- paste('http://',x,sep='')
     if (strsplit(x,'')[[1]][length(strsplit(x,'')[[1]])] != "/") x <- paste(x,"/",sep="")
     if (!RCurl::url.exists(x)) stop("the http address does not exist OR Server is down!")
   } else {
@@ -220,7 +241,7 @@ getNativeTemporalResolution <- function(product) {
         while(class(getlist) == "try-error") {
           # palfaro @ 2017-01-09
           # reuse MD_curlHandle to enable http keepalive
-          getlist <- try(strsplit(RCurl::getURL(paste(productURL,dir, "/", sep=""),.opts = opt, curl = MD_curlHandle), "\r*\n")[[1]],silent=TRUE)
+          getlist <- try(strsplit(RCurl::getURL(paste(productURL,dir, "/", sep=""),.opts = opt, curl = .MD_curlHandle), "\r*\n")[[1]],silent=TRUE)
           
           if (class(getlist) == "try-error" || (length(getlist) < 30 && length(grep(pattern = serverErrorsPattern, getlist)) > 0)) {
             Sys.sleep(15)
