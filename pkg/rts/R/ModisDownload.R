@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 5.9 (last update): June. 2017
+# Version: 6.0 (last update): June. 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -81,6 +81,16 @@ getNativeTemporalResolution <- function(product) {
   }
   
   return(list(increment=increment, units=units))
+}
+#---------
+
+.getSeparator <- function(x) {
+  if (length(strsplit(x,'/')[[1]]) != 1) '/'
+  else '\\'
+}
+#---
+.getMRTdata <- function(x) {
+  paste0(strsplit(x,'bin')[[1]][1],'data')
 }
 
 #-----------------------
@@ -593,6 +603,11 @@ setMethod("mosaicHDF", "character",
             if (missing(bands_subset))  bands_subset <- ''
             if (missing(delete)) delete <- FALSE
             
+            MRTpath <- normalizePath(MRTpath,winslash = .getSeparator(MRTpath))
+            if (Sys.getenv('MRT_DATA_DIR') == '') {
+              Sys.setenv(MRT_DATA_DIR=.getMRTdata(MRTpath))
+            }
+            
             mosaicname = file(paste(MRTpath, "/TmpMosaic.prm", sep=""), open="wt")
             write(paste(getwd(),"/",hdfNames[1], sep=""), mosaicname)
             for (j in 2:length(hdfNames)) write(paste(getwd(),"/",hdfNames[j], sep=""),mosaicname,append=T)
@@ -616,6 +631,14 @@ setMethod("mosaicHDF", "character",
 setMethod("reprojectHDF", "character",
           function(hdfName,filename,MRTpath,UL="",LR="",resample_type='NEAREST_NEIGHBOR',proj_type='UTM',
                    bands_subset='',proj_params='0 0 0 0 0 0 0 0 0 0 0 0',datum='WGS84',utm_zone=NA,pixel_size=1000) {
+            
+            if (missing(MRTpath)) stop("MRTpath argument should be specified...")
+            
+            MRTpath <- normalizePath(MRTpath,winslash = .getSeparator(MRTpath))
+            
+            if (Sys.getenv('MRT_DATA_DIR') == '') {
+              Sys.setenv(MRT_DATA_DIR=.getMRTdata(MRTpath))
+            }
             
             fname = file('tmp.prm', open="wt")
             write(paste('INPUT_FILENAME = ', getwd(), '/',hdfName, sep=""), fname) 
@@ -760,6 +783,13 @@ setMethod("ModisDownload", "character",
                                         followlocation=TRUE)
             }
             
+            if (!missing(MRTpath) && !is.null(MRTpath)) {
+              MRTpath <- normalizePath(MRTpath,winslash = .getSeparator(MRTpath))
+              if (Sys.getenv('MRT_DATA_DIR') == '') {
+                Sys.setenv(MRT_DATA_DIR=.getMRTdata(MRTpath))
+              }
+            }
+            
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
               if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)
@@ -839,6 +869,12 @@ setMethod("ModisDownload", "numeric",
                                         followlocation=TRUE)
             }
             
+            if (!missing(MRTpath) && !is.null(MRTpath)) {
+              MRTpath <- normalizePath(MRTpath,winslash = .getSeparator(MRTpath))
+              if (Sys.getenv('MRT_DATA_DIR') == '') {
+                Sys.setenv(MRT_DATA_DIR=.getMRTdata(MRTpath))
+              }
+            }
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
               if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)

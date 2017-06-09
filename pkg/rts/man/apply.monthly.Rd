@@ -50,7 +50,7 @@ A raster time series (\code{Raster*TS}) object
 }
 
 \examples{
-\dontrun {
+\dontrun{
 file <- system.file("external/ndvi", package="rts")
 
 ndvi <- rts(file) # read the ndvi time series from the specified file

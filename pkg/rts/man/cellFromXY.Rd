@@ -38,7 +38,7 @@ row, column or cell number(s). cellFromLine and cellFromPolygon return a list.
 
 
 \examples{
-\dontrun {
+\dontrun{
 file <- system.file("external/ndvi", package="rts")
 
 rt <- rts(file) # read the ndvi time series from the specified file
