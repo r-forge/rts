@@ -6,4 +6,4 @@
 }
 
 if (!requireNamespace("RCurl",quietly = TRUE)) warning("Package RCurl is not installed")
-.MD_curlHandle <- RCurl::getCurlHandle()
+else .MD_curlHandle <- RCurl::getCurlHandle()
