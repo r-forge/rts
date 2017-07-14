@@ -4,3 +4,5 @@
   .setAuth()
   invisible(0)
 }
+
+.MD_curlHandle <- RCurl::getCurlHandle()

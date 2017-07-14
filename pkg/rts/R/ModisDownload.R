@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 6.2 (last update): July 2017
+# Version: 6.3 (last update): July 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -307,9 +307,9 @@ getNativeTemporalResolution <- function(product) {
       # This is a bit convoluted but we need the .MD_curlHandle created in the global environment for
       # getModisName to find it. In the parallel case it gets created in the global environment in the clusterEvalQ call
       # but if we call the same expression here it gets created in the current environment, thus we use assign
-      assign(".MD_curlHandle", RCurl::getCurlHandle(), envir = .GlobalEnv)
+      #assign(".MD_curlHandle", RCurl::getCurlHandle(), envir = .GlobalEnv)
       Modislist <- lapply(dirs, FUN = getModisName, productURL=x, h=h, v=v, opt=opt, serverErrorsPattern=serverErrorsPattern, forceReDownload=forceReDownload)
-      rm(.MD_curlHandle, envir = .GlobalEnv)
+      #rm(.MD_curlHandle, envir = .GlobalEnv)
     }
     names(Modislist) <- dirs
     
@@ -474,9 +474,9 @@ getNativeTemporalResolution <- function(product) {
     # This is a bit convoluted but we need the .MD_curlHandle created in the global environment for
     # getModisName to find it. In the parallel case it gets created in the global environment in the clusterEvalQ call
     # but if we call the same expression here it gets created in the current environment, thus we use assign
-    assign(".MD_curlHandle", RCurl::getCurlHandle(), envir = .GlobalEnv)
+    #assign(".MD_curlHandle", RCurl::getCurlHandle(), envir = .GlobalEnv)
     res <- lapply(X = 1:nrow(plainModisList), FUN = getFile, plainModisList=plainModisList, opt=opt, forceReDownload=forceReDownload)
-    rm(.MD_curlHandle, envir = .GlobalEnv)
+    #rm(.MD_curlHandle, envir = .GlobalEnv)
   }
   
   out <- do.call('rbind', res)  
@@ -709,7 +709,7 @@ setMethod("getMODIS", "character",
             # This is a bit convoluted but we need the .MD_curlHandle created in the global environment for
             # getModisName to find it. In the parallel case it gets created in the global environment in the clusterEvalQ call
             # but if we call the same expression here it gets created in the current environment, thus we use assign
-            assign(".MD_curlHandle", RCurl::getCurlHandle(), envir = .GlobalEnv)
+            #assign(".MD_curlHandle", RCurl::getCurlHandle(), envir = .GlobalEnv)
             for (d in dirs) {
               dwnld <- rep(FALSE,length(Modislist[[d]]))
               cnt <- 1
@@ -723,7 +723,7 @@ setMethod("getMODIS", "character",
               out[dc,3] <- length(which(dwnld))
               dc <- dc+1
             }
-            rm(.MD_curlHandle, envir = .GlobalEnv)
+            #rm(.MD_curlHandle, envir = .GlobalEnv)
             
             if (sum(out[,3]) > 0) {
               cat(paste('from ', sum(out[,2]),' available images, ',sum(out[,3]),' images are successfully downloaded.',sep=''))
@@ -768,7 +768,7 @@ setMethod("getMODIS", "numeric",
             # This is a bit convoluted but we need the .MD_curlHandle created in the global environment for
             # getModisName to find it. In the parallel case it gets created in the global environment in the clusterEvalQ call
             # but if we call the same expression here it gets created in the current environment, thus we use assign
-            assign(".MD_curlHandle", RCurl::getCurlHandle(), envir = .GlobalEnv)
+            #assign(".MD_curlHandle", RCurl::getCurlHandle(), envir = .GlobalEnv)
             
             for (d in dirs) {
               dwnld <- rep(FALSE,length(Modislist[[d]]))
@@ -786,7 +786,7 @@ setMethod("getMODIS", "numeric",
               out[dc,3] <- length(which(dwnld))
               dc <- dc+1
             }
-            rm(.MD_curlHandle, envir = .GlobalEnv)
+            #rm(.MD_curlHandle, envir = .GlobalEnv)
             
             cat('\n')
             if (sum(out[,3]) > 0) {
