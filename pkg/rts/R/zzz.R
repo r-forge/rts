@@ -5,5 +5,4 @@
   invisible(0)
 }
 
-if (!requireNamespace("RCurl",quietly = TRUE)) warning("Package RCurl is not installed")
-else .MD_curlHandle <- RCurl::getCurlHandle()
+.MD_curlHandle <- RCurl::getCurlHandle()
