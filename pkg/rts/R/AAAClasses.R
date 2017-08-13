@@ -51,3 +51,4 @@ setRefClass(".rtsOptions",
 )
 .rtsOptions <- new('.rtsOptions')
 
+.._MD_curlHandle <<- NULL
