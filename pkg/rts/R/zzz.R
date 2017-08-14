@@ -1,6 +1,6 @@
 # Author: Babak Naimi, naimi.b@gmail.com
-# Date :  July 2017
-# Version 1.0
+# Date :  August 2017
+# Version 1.1
 # Licence GPL v3
 
 .onAttach <- function(libname, pkgname) {
@@ -14,6 +14,6 @@
 
 
 .onUnload <- function(libpath) {
-  if (".._MD_curlHandle" %in% ls(envir=as.environment(".GlobalEnv"))) rm(.._MD_curlHandle,envir=as.environment(".GlobalEnv"))
+  if (".._MD_curlHandle" %in% ls(envir=as.environment(".GlobalEnv"))) rm('.._MD_curlHandle',envir=as.environment(".GlobalEnv"))
   invisible(0)
 }

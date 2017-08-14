@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 6.5 (last update): July 2017
+# Version: 6.6 (last update): August 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -24,7 +24,7 @@
 # parallel is used to call parLapplyLB to do the parallel downloads
 # palfaro @ 2017-01-09
 # create a RCurl handle which will be reused between connections to enable http keepalives
-
+.._MD_curlHandle <- NULL
 
 modisProducts <- function(version=NULL) {
   #.ModisLPxxx <- NULL
@@ -395,7 +395,7 @@ getNativeTemporalResolution <- function(product) {
     # Write directly to file, without going through memory, should be slightly faster.
     # Also, reuse .rtsOptions$getOption('MD_curlHandle') to enable http keepalive
     f = RCurl::CFILE(filename, mode="wb")
-    er2 <- try(er <- RCurl::curlPerform(url = x, curl=.._MD_curlHandle, writedata = f@ref, .opts = opt))
+    er2 <- try(er <- RCurl::curlPerform(url = x, curl=get('.._MD_curlHandle'), writedata = f@ref, .opts = opt))
     RCurl::close(f)
     
     # palfaro @ 2017-01-02
