@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 6.6 (last update): August 2017
+# Version: 6.7 (last update): August 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -640,11 +640,11 @@ setMethod("setMRTpath", "ANY",
             if (missing(update)) update <- FALSE
             if (is.null(.rtsOptions$getOption(n = 'MRTpath'))) {
               
-              MRTpath <- .normalizePath(MRTpath)
-              
               if (!file.exists(paste0(Sys.getenv('HOME'),'/.MRTpath'))) {
                 if (missing(MRTpath)) stop('MRTpath should be defined!')
                 if (!is.character(MRTpath)) stop('MRTpath should be a character!')
+                
+                MRTpath <- .normalizePath(MRTpath)
                 
                 file.create(paste0(Sys.getenv('HOME'),'/.MRTpath'))
                 f <- file(paste0(Sys.getenv('HOME'),'/.MRTpath'),'w')
@@ -659,6 +659,11 @@ setMethod("setMRTpath", "ANY",
                   b <- lapply(a,function(x) strsplit(x,':')[[1]])
                   b <- unlist(lapply(b,function(x) {if (x[1] == 'MRTpath' & x[2] == MRTpath) TRUE else FALSE}))
                   if (!b) {
+                    if (missing(MRTpath)) stop('MRTpath should be defined!')
+                    if (!is.character(MRTpath)) stop('MRTpath should be a character!')
+                    
+                    MRTpath <- .normalizePath(MRTpath)
+                    
                     f <- file(paste0(Sys.getenv('HOME'),'/.MRTpath'),'w')
                     cat(paste0("MRTpath:",MRTpath,"\n"),file=f)
                     close(f)
@@ -669,6 +674,9 @@ setMethod("setMRTpath", "ANY",
               if (echo) cat('MRTpath is successfully added!')
             } else if (update) {
               if (missing(MRTpath)) stop('MRTpath should be defined!')
+              if (!is.character(MRTpath)) stop('MRTpath should be a character!')
+              MRTpath <- .normalizePath(MRTpath)
+              
               file.create(paste0(Sys.getenv('HOME'),'/.MRTpath'))
               f <- file(paste0(Sys.getenv('HOME'),'/.MRTpath'),'w')
               cat(paste0("MRTpath:",MRTpath,"\n"),file=f)
@@ -697,7 +705,7 @@ setMethod("mosaicHDF", "character",
               if (is.null(.rtsOptions$getOption('MRTpath'))) stop('MRTpath is not provided & is not set in the package; you can set it using setMRTpath only one time, and then everytime it can be used everywhere in the package!')
               else MRTpath <- .rtsOptions$getOption('MRTpath')
             } else {
-              setMRTpath(MRTpath)
+              setMRTpath(MRTpath,echo=FALSE)
               MRTpath <- .rtsOptions$getOption('MRTpath')
             }
             
@@ -734,7 +742,7 @@ setMethod("reprojectHDF", "character",
               if (is.null(.rtsOptions$getOption('MRTpath'))) stop('MRTpath is not provided & is not set in the package; you can set it using setMRTpath only one time, and then everytime it can be used everywhere in the package!')
               else MRTpath <- .rtsOptions$getOption('MRTpath')
             } else {
-              setMRTpath(MRTpath)
+              setMRTpath(MRTpath,echo=FALSE)
               MRTpath <- .rtsOptions$getOption('MRTpath')
             }
             
@@ -906,7 +914,7 @@ setMethod("ModisDownload", "character",
             
             
             if (!missing(MRTpath) && !is.null(MRTpath)) {
-              setMRTpath(MRTpath)
+              setMRTpath(MRTpath,echo=FALSE)
               MRTpath <- .rtsOptions$getOption('MRTpath')
               if (Sys.getenv('MRT_DATA_DIR') == '') {
                 Sys.setenv(MRT_DATA_DIR=.getMRTdata(MRTpath))
@@ -1000,7 +1008,7 @@ setMethod("ModisDownload", "numeric",
             }
             
             if (!missing(MRTpath) && !is.null(MRTpath)) {
-              setMRTpath(MRTpath)
+              setMRTpath(MRTpath,echo=FALSE)
               MRTpath <- .rtsOptions$getOption('MRTpath')
               if (Sys.getenv('MRT_DATA_DIR') == '') {
                 Sys.setenv(MRT_DATA_DIR=.getMRTdata(MRTpath))
