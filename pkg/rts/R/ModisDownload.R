@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 6.8 (last update): August 2017
+# Version: 6.9 (last update): August 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -395,7 +395,8 @@ getNativeTemporalResolution <- function(product) {
     # Write directly to file, without going through memory, should be slightly faster.
     # Also, reuse .rtsOptions$getOption('MD_curlHandle') to enable http keepalive
     f = RCurl::CFILE(filename, mode="wb")
-    er2 <- try(er <- RCurl::curlPerform(url = x, curl=get('.._MD_curlHandle'), writedata = f@ref, .opts = opt))
+    #er2 <- try(er <- RCurl::curlPerform(url = x, curl=get('.._MD_curlHandle'), writedata = f@ref, .opts = opt))
+    er2 <- try(er <- RCurl::curlPerform(url = x, curl=RCurl::getCurlHandle(), writedata = f@ref, .opts = opt))
     RCurl::close(f)
     
     # palfaro @ 2017-01-02
@@ -690,7 +691,8 @@ setMethod("setMRTpath", "ANY",
             f <- file(paste0(Sys.getenv('HOME'),'/.MRTpath'),'r')
             a <- readLines(f)
             close(f)
-            if (length(a) > 0) .rtsOptions$addOption('MRTpath',lapply(a,function(x) strsplit(x,':')[[1]])[[1]][2])
+            #if (length(a) > 0) .rtsOptions$addOption('MRTpath',lapply(a,function(x) strsplit(x,':')[[1]])[[1]][2])
+            if (length(a) > 0) .rtsOptions$addOption('MRTpath', lapply(a, function(x) strsplit(x,'MRTpath:')[[1]])[[1]][2])
             
           }
 )
@@ -789,7 +791,7 @@ setMethod("getMODIS", "character",
             # Max amount of parallel downloads. If package parallel is not available use only 1
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
-              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)
+              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(nc,4)
               else if (is.numeric(ncore)) ncore <- min(nc,ncore)
               else ncore <- 1L
             } else { ncore <- 1L }
@@ -848,7 +850,7 @@ setMethod("getMODIS", "numeric",
             
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
-              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)
+              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(nc,4)
               else if (is.numeric(ncore)) ncore <- min(nc,ncore)
               else ncore <- 1L
             } else { ncore <- 1L }
@@ -930,7 +932,7 @@ setMethod("ModisDownload", "character",
             
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
-              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)
+              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(nc,4)
               else if (is.numeric(ncore)) ncore <- min(nc,ncore)
               else ncore <- 1L
             } else { ncore <- 1L }
@@ -1024,7 +1026,7 @@ setMethod("ModisDownload", "numeric",
             
             if (requireNamespace('parallel', quietly = TRUE)) { 
               nc <- parallel::detectCores()
-              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(floor(nc/2),4)
+              if (!missing(ncore) && is.character(ncore) && tolower(ncore) %in% c('auto','a','au')) ncore <- min(nc,4)
               else if (is.numeric(ncore)) ncore <- min(nc,ncore)
               else ncore <- 1L
             } else { ncore <- 1L }
