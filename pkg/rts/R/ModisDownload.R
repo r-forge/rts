@@ -1,5 +1,5 @@
 # Title:  ModisDownload 
-# Version: 7.0 (last update): August 2017
+# Version: 7.1 (last update): August 2017
 # Author: Babak Naimi (naimi.b@gmail.com), and (from version 5.4) Pablo Alfaro (ludecan@gmail.com)
 
 # Major changes have been made on this version comparing to the 2.x. Since the FTP is not supported anymore,
@@ -309,8 +309,8 @@ getNativeTemporalResolution <- function(product) {
       # palfaro @ 2017-01-09
       # The curl handles must be created in the processes that are going to use them so we create them
       # using clusterEvalQ
-      parallel::clusterExport(cl,c('.._MD_curlHandle'))
-      #parallel::clusterEvalQ(cl, expr = { .._MD_curlHandle <- RCurl::getCurlHandle()})
+      #parallel::clusterExport(cl,c('.._MD_curlHandle'))
+      parallel::clusterEvalQ(cl, expr = { .._MD_curlHandle <- RCurl::getCurlHandle()})
       Modislist <- parallel::parLapplyLB(cl=cl, X=dirs, fun=getModisName, productURL=x, h=h, v=v, opt=opt, serverErrorsPattern=serverErrorsPattern, forceReDownload=forceReDownload)
       parallel::stopCluster(cl)
     } else {
@@ -480,8 +480,8 @@ getNativeTemporalResolution <- function(product) {
     # The curl handles must be created in the processes that are going to use them so we create them
     # using clusterEvalQ
     
-    #parallel::clusterEvalQ(cl, expr = { .._MD_curlHandle <- RCurl::getCurlHandle()})
-    parallel::clusterExport(cl=cl, varlist=c('.._MD_curlHandle',".downloadHTTP"), envir=environment())
+    parallel::clusterEvalQ(cl, expr = { .._MD_curlHandle <- RCurl::getCurlHandle()})
+    parallel::clusterExport(cl=cl, varlist=c(".downloadHTTP"), envir=environment())
     res <- parallel::parLapplyLB(cl=cl, X = 1:nrow(plainModisList), fun = getFile, plainModisList=plainModisList, opt=opt, forceReDownload=forceReDownload)
     parallel::stopCluster(cl)
   } else {
